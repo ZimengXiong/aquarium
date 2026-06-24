@@ -95,7 +95,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item?.button?.image = image
         item?.button?.imagePosition = .imageOnly
         item?.button?.toolTip = controller.config.enabled ? "Aquarium is enabled" : "Aquarium is disabled"
-        item?.button?.contentTintColor = controller.config.enabled ? .controlAccentColor : .secondaryLabelColor
+        // Leave the icon as a pure template image (no tint) so it follows the
+        // menu bar appearance — white in dark mode, black in light mode — like
+        // every other menu bar icon. Enabled/disabled is conveyed by fish.fill vs fish.
+        item?.button?.contentTintColor = nil
     }
 
     @objc private func openSettings() {

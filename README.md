@@ -24,6 +24,6 @@ Open Aquarium after installing. The app installs or updates its privileged helpe
 
 Build from source with `make build`, then run the debug app with `make open`. Install the privileged helper with `make install-helper`.
 
-For a release build, run `make package`. The packaged app is written to `.build/Aquarium-0.1.9.zip`.
+For a release build, run `make package`. The packaged app is written to `.build/Aquarium-0.1.10.zip`.
 
 Aquarium requires macOS 14 or newer. The default safety settings only start above 20% battery and auto-disable below 10%.
