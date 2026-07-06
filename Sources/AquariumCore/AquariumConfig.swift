@@ -125,6 +125,38 @@ public enum AquariumConfigStore {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(config)
-        try data.write(to: url, options: [.atomic])
+        do {
+            // Prefer an atomic write: it is crash-safe. But an atomic write stages a
+            // temporary file in the parent directory and renames it into place, so it
+            // needs write access to the directory, not just the target file. config.json
+            // is installed group-writable (664 root:staff) inside a root-owned directory
+            // so the unprivileged menu bar app can update it; if that directory is created
+            // root:wheel instead, the app user cannot stage the temp file and every
+            // settings change (e.g. the enable toggle) is silently dropped.
+            try data.write(to: url, options: [.atomic])
+        } catch {
+            // Only fall back for a permission failure we can actually repair: the file
+            // itself is writable even though its directory is not. Rethrow anything else
+            // (out of space, I/O) so a doomed write never truncates a valid config.
+            guard isPermissionDenied(error), FileManager.default.isWritableFile(atPath: path) else {
+                throw error
+            }
+            // In-place write: needs write access to the existing file only, not to the
+            // directory. Not atomic, but strictly better than dropping the change.
+            try data.write(to: url, options: [])
+        }
+    }
+
+    private static func isPermissionDenied(_ error: Error) -> Bool {
+        if let cocoa = error as? CocoaError, cocoa.code == .fileWriteNoPermission {
+            return true
+        }
+        let nsError = error as NSError
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError,
+           underlying.domain == NSPOSIXErrorDomain,
+           underlying.code == Int(EACCES) || underlying.code == Int(EPERM) {
+            return true
+        }
+        return false
     }
 }
